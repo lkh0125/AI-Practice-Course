@@ -26,15 +26,14 @@
   - Temporal Fusion Transfomers에서 입력되는 time_varying_unknown_reals 값의변수 유형에 따라성능의 편차가 큰것을 확인하고 기존에 수집한 데이터를 F-통계량과 AIC 값을 활용하여 단계적 변수 선택법을 통해 유의미한 독립 변수만을 선택한 데이터 셋.<br><br>
 ## `2.문제 정의 및 가정`
 - `연구 목적`
-  - 가상 화폐 가격을 예측하기 위해서 시계열 예측 모형들을 이용하여 다양한 입력 변수들이 예측 성능에 미치는 영향도를 파악.<br>
+  - 가상 화폐 가격을 예측하기 위해서 시계열 예측 모형들을 이용하여 다양한 입력 변수들이 예측 성능에 미치는 영향도를 파악.
 - `연구 방법`
   - Baseline, DeepAR, TFT 실험과정으로 찾은 최적의 하이퍼 파라미터의 조합으로 시계열 모델을 구축
     - RNN 기반의 LSTM 모델(Baseline)
     - RNN 기반의 확률적 예측 모형인 DeepAR
     - Attention 기반의 구조 모형인 Temporal Fusion Transformers
-<br>
 - `성능 지표`
-  - 백분율 오류를 기반으로 한 정확도 측정 방법인 SMAPE(Symmetric mean absolute percentage error)사용<br>
+  - 백분율 오류를 기반으로 한 정확도 측정 방법인 SMAPE(Symmetric mean absolute percentage error)사용
 - `성능 향상 방법`
   - 암호화폐와 관련된 뉴스 데이터를 이용하여 마이닝 기법을 일부 적용하여 비정형 데이터를 공변량으로 활용하고 분석에 가치가 있는 항목들에 대한 정보를 수집한 후 적절한 통계학적 절차를 통해 필수적인 공변량을 선택하고 딥러닝 시계열 모델에 반영하여 암호 화폐 예측을 위한 공변량의 효과를 파악<br><br>
 ## `3.제안 방법론 - 모델 파이프 라인`
