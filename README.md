@@ -37,43 +37,61 @@
 - `성능 향상 방법`
   - 암호화폐와 관련된 뉴스 데이터를 이용하여 마이닝 기법을 일부 적용하여 비정형 데이터를 공변량으로 활용하고 분석에 가치가 있는 항목들에 대한 정보를 수집한 후 적절한 통계학적 절차를 통해 필수적인 공변량을 선택하고 딥러닝 시계열 모델에 반영하여 암호 화폐 예측을 위한 공변량의 효과를 파악<br><br>
 ## `3.제안 방법론 - 모델 파이프 라인`
+- `DeepAR`
+  - Auto-regressive recurrent network model을 기반으로 하는 확률 모형으로 미래의 값이 아니라 미래 확률 분포를 추정하며 여러 공변량을 활용해 학습이 가능한 모델
+   
+  - 단일 예측값이 아닌 해당 시점의 확률 분포를 모델링하는 파라미터가 output으로 출력되어 probabilistic forecasting
+   
+  - 일반 RNN과의 가장 큰 차이중 하나는 Likelihood Model을 사용한다는 것으로 확률값으로 나오는 실제 데이터의 분포를 찾기 위해 Gaussian Likelihood와 건수등에 대해서는 Negative binomial distribution를 사용하여 정확도를 높여줌
+   
+  - 보통 RNN은 이전 스텝에서의 출력 값을 현재 스텝의 입력값으로 사용하는데 DeepAR은 정확한 데이터로 훈련하기 위해 예측값을 다음 스텝으로 넘기는 것이 아니라 실제값을 매번 입력값으로 사용하는 교사강요(teacher forcing) 방식으로 훈련
+   
+  - covariate 과 함께 학습하기 때문에 시계열 패턴뿐만 아니라 예를들어 블랙프라이데이에 첫 수요가 발생했다면 다음 블랙프라이데이에도 수요가 발생할 것이라 예측하고, 해당 품목의 재고를 준비할 수 있음
+   
+  - 신제품의 수요를 예측할 때 발생하는 cold-start 문제를 비슷한 제품의 수요 데이터를 활용하여 예측에 활용
+
+- `Temporal Fusion Transformers`
+  - 미래에는 알 수 없는 관측 변수(Observed Inputs)들과 함께 알고 있는 변수(Time varying Known Input), 시간에 따라 변하지 않는 변수인 Static Covariates을 입력으로 활용하여 Multi-Horizon Forecasting을 하는 Attention기반 구조로 구성
+   
+  - 단일 예측값이 아닌 해당 시점의 확률 분포를 모델링하는 파라미터가 output으로 출력되어 probabilistic forecasting
+  - Encoder Variable 그리고 Decoder Variable 간의 Feature Importance 제공하여 모델의 해석력을 확보할 수 있다는 장점이 있는 모델
+  - Gating Mechanism은 불필요한 성분을 스킵하여 광범위한 데이터셋에 대하여 깊이와 복잡도를 조절하는 기능
+  - GRN(Gated Residual Network)는 Input Variable과  선택적으로 context vector를 받아 처리하고 ELU activation function(Exponential Linear Unit Activation Function : ELU는 입력이 0보다 크면 Identify Function으로 동작하며, 0보다 작을 때는 일정한 출력) 을 거친 후 GLU(Gated Linear Units)을 사용하여 주어진 데이터셋에서 필요하지 않은 부분을 제거한 후 Variable Selection Network를 통해 관련 있는 Input Variable만 선택
+  - Static Covariate Encoder를 통해 Static Covariate들을 Context Vector에 인코딩하고 네트워크에 연결
+  - Temporal Processing을 통해 현재는 관측할 수 있으나 미래는 알수 없는 값과 미래에도 알수 있는값 모두에 대해 장기 단기 시간 관계를 학습
+  - Interpretable Multi-Head Attention을 통해 장기 의존성 및 해석력을 강화하는데 TFT는 Self-Attention Mechanism을 통해 다른 시점에 대한 Long-Term Relation을 파악하는데 각 Head에서 출력된 값을 공유하기위해 기존의 Multi-Head Attention 구조와는 조금 다르게 수정된 Multi-Head Attention 구조를 사용
+  - Prediction Intervals을 통해 Quantile을 이용하여 매 Prediction Horizon에 대하여 Target이 존재할 수 있는 범위를 제공<br><br>
+
+## `4.실험 및 결과 - 실험 시나리오 설계`
+  - PCA 차원 축소 데이터셋, 회귀 방정식으로 선택된 설명변수들로 구성된 데이터셋 그리고 전체 데이터셋에 대해 각각 Baseline인 LSTM, DeepAR, Temporal Fusion Tranformers 모델에 적용하여 백분율 오류에 기반한 정확도 측정 평가지표인 SMAPE값을 비교, 모델의 성능을 측정
+   
+   $$ SMAPE = 100/n * \displaystyle\sum_{i=1}^{n}\vert y_l - \widehat{y_l} \vert / (\vert y_l \vert +  \vert \widehat{y_l} \vert) $$
+
+  - 해석이 가능한 Temporal Fusion Transformers으로 타겟에 영향을 주는 변수의 중요도도 확인
+  - 효율적으로 하이퍼파라미터를 탐색하기 위해 TPE (Tree-structured Parzen Estimator) 알고리즘을 사용
+   
+    - TPE (Tree-structured Parzen Estimator) 알고리즘
+       > 미지의 목적 함수의 대한 확률적인 추정을 수행하는 Surrogate Model 모델과 목적 함수에 대한 현재까지의 확률적 추정 결과를 바탕으로 최적의 입력값을 찾는 데 가장 유용할 만한 다음 입력값 후보을 추천해 주는 함수인 Acquisition Function이 존재해서 미지의 목적 함수(objective function) 의 최적의 해를 찾는 Bayesian Optimization 방법론
+
+<br>
+
+## `5.실험 결론`
+  - PCA 차원축소 또는 변수 선택법을 통해 변수를 축소하여 사용하는것보다 다양한 input 데이터를 직접 사용하는 것이 DeepAR, TFT 둘다 성능이 비교적 좋았으며 예측값에 대해 멀티스탭으로 구현시 예측결과는 DeepAR, TFT가 Baseline에 비하여 우수한 성능을 보여주는것을 확인
+   
+  - TFT의 Feature importance를 통해 변수들의 중요도를 파악한 결과를 보여주는데 미래 시점의 값을 현재 시점에서도 알 수 있는 변수(time_varying_known_categoricals) 인공휴일, 요일, 월 등이 데이터가 예측에 영향을 주고 있는것을 확인
+   
+  - 달러/원화 환율, 달러/위안 환율, 등이 영향을 주고있는 것을 확인할수 있었는데 특이한 점은 예측기간이 짧기는 하지만 왼쪽에 달러/위안 환율의 예측값이 실제 화폐 가격값과 반대의 성향을 띄고 있음
+   
+  - DeepAR도 추세는 실제 화폐 가격에 따라가고 있으나 예측 정확도는 TFT에 비해 비교적 낮았고 멀티스탭으로 구현한 LSTM보다는 성능이 우수함을 보여줌
+   
+  - 멀티스탭으로 구현한 LSTM의 경우 예측 기간이 길어질수록 예측력이 떨어지는 것을 볼수 있음
+
+<br>
 
 
 
 
-```asdf
-$$f(x)= if x < x_{min} : (x/x_{min})^a$$ 
-```
 
-
-
-$$f(x)= if x < x_{min} : (x/x_{min})^a$$  
-$$otherwise : 0$$  
-$$P(w)=U(x/2)(7/5)/Z$$  
-$$p_{\theta}(x) = \int p_{\theta}(2z)p_{\theta}(y\mid k)dz$$  
-$$x = argmax_k((x_t-x_u+x_v)^T*x_m)/(||x_b-x_k+x_l||)$$
-
-
-| 값 | 의미 | 기본값 |
-|---|:---:|---:|
-| `static` | 유형(기준) 없음 / 배치 불가능 | `static` |
-| `relative` | 요소 자신을 기준으로 배치 |  |
-| `absolute` | 위치 상 부모(조상)요소를 기준으로 배치 |  |
-| `fixed` | 브라우저 창을 기준으로 배치 |  |
-
-값 | 의미 | 기본값
----|:---:|---:
-`static` | 유형(기준) 없음 / 배치 불가능 | `static`
-`relative` | 요소 **자신**을 기준으로 배치 |
-`absolute` | 위치 상 **_부모_(조상)요소**를 기준으로 배치 |
-`fixed` | **브라우저 창**을 기준으로 배치 |
-
-
-```python
-py_vector = one_hot_encoding("파이",word2index)
-py_vector.dot(torch_vector)
->>> 0.0
-```
 
 <br>
 
@@ -83,55 +101,7 @@ py_vector.dot(torch_vector)
 
 - <a href="https://www.google.co.kr/" target="_blank">GOOGLE</a>
 
-
-
-인용문(blockQuote)
-
-> 남의 말이나 글에서 직접 또는 간접으로 따온 문장.
-> _(네이버 국어 사전)_
-
-BREAK!
-
-> 인용문을 작성하세요!
->> 중첩된 인용문(nested blockquote)을 만들 수 있습니다.
->>> 중중첩된 인용문 1
->>> 중중첩된 인용문 2
->>> 중중첩된 인용문 3
-
-
-<u>마크다운에서 지원하지 않는 기능</u>을 사용할 때 유용하며 대부분 잘 동작합니다.
-
 <img width="150" src="http://www.gstatic.com/webp/gallery/4.jpg" alt="Prunus" title="A Wild Cherry (Prunus avium) in flower">
 
 ![Prunus](http://www.gstatic.com/webp/gallery/4.jpg)
-
-
-
----
-(Hyphens)
-
-***
-(Asterisks)
-
-___
-(Underscores)
-
-
-1. 첫번째
-2. 두번째
-3. 세번째
-  
-+ 순서없음
-    - 홍길동
-      * 중대장
-        + 프로실망러
-
-
-__볼드(진하게)__  
-_이탤릭체(기울여서)_    
-~~취소선~~  
-<u>밑줄</u>  
-__볼드로 진하게 만들다가*이탤릭으로 기울이고*다시 볼드로__(중복 활용도 가능하다.)
-
-
 
