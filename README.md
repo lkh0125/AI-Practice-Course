@@ -87,21 +87,3 @@
   - 멀티스탭으로 구현한 LSTM의 경우 예측 기간이 길어질수록 예측력이 떨어지는 것을 볼수 있음
 
 <br>
-
-
-
-
-
-
-<br>
-
-- [Flow charts](http://flowchart.js.org/)
-- [Sequence diagrams](https://bramp.github.io/js-sequence-diagrams/)
-- [![Vue](/images/vue.png)](https://kr.vuejs.org/)
-
-- <a href="https://www.google.co.kr/" target="_blank">GOOGLE</a>
-
-<img width="150" src="http://www.gstatic.com/webp/gallery/4.jpg" alt="Prunus" title="A Wild Cherry (Prunus avium) in flower">
-
-![Prunus](http://www.gstatic.com/webp/gallery/4.jpg)
-
